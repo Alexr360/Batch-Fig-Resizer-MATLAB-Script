@@ -1,43 +1,31 @@
 function BatchFigResizer()
-    appVersion = '1.0.0';
+    appVersion = '1.0.1';
     fig = uifigure('Name', ['Figure Layout Resizer v' appVersion], 'Position', [100 100 920 680]);
     rootGrid = uigridlayout(fig, [1, 1]);
     rootGrid.Padding = [0 0 0 0];
     tabs = uitabgroup(rootGrid);
-    
+
     resizeTab = uitab(tabs, 'Title', 'Batch Resize');
     mergeTab = uitab(tabs, 'Title', 'Merge Figures');
     regionTab = uitab(tabs, 'Title', 'Figure Region Selector');
     copyTab = uitab(tabs, 'Title', 'Copy Figures');
     updateTab = uitab(tabs, 'Title', 'Updates');
-    
-    mainGrid = uigridlayout(resizeTab, [1, 2]);
-    mainGrid.ColumnWidth = {360, '1x'};
-    mainGrid.Padding = [15 15 15 15];
-    mainGrid.ColumnSpacing = 15;
-    
-    leftGrid = uigridlayout(mainGrid, [4, 1]);
-    leftGrid.RowHeight = {'fit', 'fit', 'fit', '1x'};
-    leftGrid.Padding = [0 0 0 0];
-    leftGrid.RowSpacing = 12;
-    
-    presetPanel = uipanel(leftGrid, 'Title', 'Preset');
-    presetGrid = uigridlayout(presetPanel, [2, 2]);
+
+    [mainGrid, leftGrid] = createTabColumns(resizeTab, 360, {'fit', 'fit', 'fit', '1x'});
+
+    presetGrid = createPanelGrid(leftGrid, 'Preset', [2, 2]);
     presetGrid.ColumnWidth = {80, '1x'};
     presetGrid.RowHeight = {24, 38};
-    presetGrid.Padding = [10 10 10 10];
     presetGrid.RowSpacing = 6;
     uilabel(presetGrid, 'Text', 'Template:');
     presetDropdown = uidropdown(presetGrid, 'Items', {'Ryu Presentation Full', 'Ryu Presentation Short', 'Presentation', 'Document', 'Custom'}, 'Value', 'Ryu Presentation Full');
     presetDescLabel = uilabel(presetGrid, 'WordWrap', 'on', 'FontColor', [0.35 0.35 0.35], 'FontSize', 11, 'VerticalAlignment', 'top');
     presetDescLabel.Layout.Row = 2;
     presetDescLabel.Layout.Column = [1 2];
-    
-    dimPanel = uipanel(leftGrid, 'Title', 'Canvas & Grid Dimensions');
-    dimGrid = uigridlayout(dimPanel, [3, 4]);
+
+    dimGrid = createPanelGrid(leftGrid, 'Canvas & Grid Dimensions', [3, 4]);
     dimGrid.ColumnWidth = {'1x', 55, '1x', 55};
     dimGrid.RowHeight = {24, 24, 20};
-    dimGrid.Padding = [10 10 10 10];
     dimGrid.RowSpacing = 8;
     uilabel(dimGrid, 'Text', 'Total Width (in):');
     widthEdit = uieditfield(dimGrid, 'numeric', 'Value', 10.0, 'Limits', [0 Inf], 'LowerLimitInclusive', 'off');
@@ -50,12 +38,10 @@ function BatchFigResizer()
     cellSummaryLabel = uilabel(dimGrid, 'Text', '', 'FontColor', [0.15 0.4 0.7], 'FontWeight', 'bold');
     cellSummaryLabel.Layout.Row = 3;
     cellSummaryLabel.Layout.Column = [1 4];
-    
-    stylePanel = uipanel(leftGrid, 'Title', 'Typography & Export Settings');
-    styleGrid = uigridlayout(stylePanel, [7, 4]);
+
+    styleGrid = createPanelGrid(leftGrid, 'Typography & Export Settings', [7, 4]);
     styleGrid.ColumnWidth = {'1x', 55, '1x', 55};
     styleGrid.RowHeight = {24, 24, 24, 24, 24, 24, 24};
-    styleGrid.Padding = [10 10 10 10];
     styleGrid.RowSpacing = 8;
     uilabel(styleGrid, 'Text', 'Font Size (pt):');
     fontSizeEdit = uieditfield(styleGrid, 'numeric', 'Value', 12, 'Limits', [1 Inf]);
@@ -63,13 +49,12 @@ function BatchFigResizer()
     lineWidthEdit = uieditfield(styleGrid, 'numeric', 'Value', 1.2, 'Limits', [0.1 Inf]);
     uilabel(styleGrid, 'Text', 'DPI / Res:');
     dpiEdit = uieditfield(styleGrid, 'numeric', 'Value', 500, 'Limits', [100 Inf], 'RoundFractionalValues', 'on');
-    uilabel(styleGrid, 'Text', 'Format:');
     formatDropdown = uidropdown(styleGrid, 'Items', {'.tif', '.png', '.pdf', '.jpeg', '.svg', '.eps', '.fig'}, 'Value', '.tif');
     uilabel(styleGrid, 'Text', 'Dot Size (px):');
     dotSizeEdit = uieditfield(styleGrid, 'numeric', 'Value', 5, 'Limits', [1 Inf]);
-    uilabel(styleGrid, 'Text', ''); 
-    uilabel(styleGrid, 'Text', ''); 
-    
+    uilabel(styleGrid, 'Text', '');
+    uilabel(styleGrid, 'Text', '');
+
     keepTitlesCheck = uicheckbox(styleGrid, 'Text', 'Keep Titles', 'Value', false);
     keepTitlesCheck.Layout.Row = 4;
     keepTitlesCheck.Layout.Column = [1 2];
@@ -100,12 +85,10 @@ function BatchFigResizer()
     legendMarginEdit = uieditfield(styleGrid, 'numeric', 'Value', 0, 'Limits', [0 Inf]);
     legendMarginEdit.Layout.Row = 7;
     legendMarginEdit.Layout.Column = [3 4];
-    
-    actionPanel = uipanel(leftGrid, 'Title', 'Batch Operations');
-    actionGrid = uigridlayout(actionPanel, [2, 3]);
+
+    actionGrid = createPanelGrid(leftGrid, 'Batch Operations', [2, 3]);
     actionGrid.ColumnWidth = {130, 32, '1x'};
     actionGrid.RowHeight = {30, 32};
-    actionGrid.Padding = [10 10 10 10];
     actionGrid.RowSpacing = 8;
     actionGrid.ColumnSpacing = 6;
     files = {};
@@ -113,63 +96,41 @@ function BatchFigResizer()
     batchPreviewNames = {};
     batchPreviewIndex = 1;
     batchPreviewTimer = [];
-    selectBtn = uibutton(actionGrid, 'Text', 'Select .fig Files', 'ButtonPushedFcn', @(btn,event) selectFiles(false));
-    addBtn = uibutton(actionGrid, 'Text', '+', 'FontWeight', 'bold', 'ButtonPushedFcn', @(btn,event) selectFiles(true));
+    uibutton(actionGrid, 'Text', 'Select .fig Files', 'ButtonPushedFcn', @(~,~) selectFiles(false));
+    uibutton(actionGrid, 'Text', '+', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) selectFiles(true));
     fileLabel = uilabel(actionGrid, 'Text', 'No files loaded', 'FontColor', [0.4 0.4 0.4]);
-    exportBtn = uibutton(actionGrid, 'Text', 'Export Figures', 'FontWeight', 'bold', 'ButtonPushedFcn', @(btn,event) exportFigs());
+    exportBtn = uibutton(actionGrid, 'Text', 'Export Figures', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) exportFigs());
     exportBtn.Layout.Row = 2;
     exportBtn.Layout.Column = [1 3];
-    
+
     rightColumnGrid = uigridlayout(mainGrid, [2, 1]);
     rightColumnGrid.RowHeight = {'1x', '1x'};
     rightColumnGrid.Padding = [0 0 0 0];
     rightColumnGrid.RowSpacing = 12;
-    rightPanel = uipanel(rightColumnGrid, 'Title', 'Layout Preview');
-    rightGrid = uigridlayout(rightPanel, [1, 1]);
-    rightGrid.Padding = [10 10 10 10];
+    rightGrid = createPanelGrid(rightColumnGrid, 'Layout Preview', [1, 1]);
     ax = uiaxes(rightGrid);
     xlabel(ax, 'Width (in)');
     ylabel(ax, 'Height (in)');
     disableDefaultInteractivity(ax);
-    originalFiguresPanel = uipanel(rightColumnGrid, 'Title', 'Original Figures');
-    originalFiguresGrid = uigridlayout(originalFiguresPanel, [1, 1]);
-    originalFiguresGrid.Padding = [10 10 10 10];
-    originalAx = uiaxes(originalFiguresGrid);
-    originalAx.XTick = [];
-    originalAx.YTick = [];
-    originalAx.Box = 'on';
-    originalAx.Color = [0.96 0.96 0.96];
-    originalAx.Toolbar.Visible = 'off';
-    disableDefaultInteractivity(originalAx);
-    title(originalAx, 'Select .fig files to preview the originals');
-    
-    mergeGrid = uigridlayout(mergeTab, [1, 2]);
-    mergeGrid.ColumnWidth = {360, '1x'};
-    mergeGrid.Padding = [15 15 15 15];
-    mergeGrid.ColumnSpacing = 15;
-    mLeftGrid = uigridlayout(mergeGrid, [4, 1]);
-    mLeftGrid.RowHeight = {'fit', 'fit', 'fit', '1x'};
-    mLeftGrid.Padding = [0 0 0 0];
-    mLeftGrid.RowSpacing = 12;
-    
-    mFilePanel = uipanel(mLeftGrid, 'Title', 'Select Files to Merge');
-    mFileGrid = uigridlayout(mFilePanel, [2, 3]);
+    originalFiguresGrid = createPanelGrid(rightColumnGrid, 'Original Figures', [1, 1]);
+    originalAx = createPreviewAxes(originalFiguresGrid, 'Select .fig files to preview the originals');
+
+    [mergeGrid, mLeftGrid] = createTabColumns(mergeTab, 360, {'fit', 'fit', 'fit', '1x'});
+
+    mFileGrid = createPanelGrid(mLeftGrid, 'Select Files to Merge', [2, 3]);
     mFileGrid.ColumnWidth = {130, 32, '1x'};
     mFileGrid.RowHeight = {30, 32};
-    mFileGrid.Padding = [10 10 10 10];
-    
+
     mergeFilesList = {};
     mergeOutDir = '';
-    mSelectBtn = uibutton(mFileGrid, 'Text', 'Select .fig Files', 'ButtonPushedFcn', @(~,~) selectMergeFiles(false));
-    mAddBtn = uibutton(mFileGrid, 'Text', '+', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) selectMergeFiles(true));
+    uibutton(mFileGrid, 'Text', 'Select .fig Files', 'ButtonPushedFcn', @(~,~) selectMergeFiles(false));
+    uibutton(mFileGrid, 'Text', '+', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) selectMergeFiles(true));
     mFileLabel = uilabel(mFileGrid, 'Text', 'No files loaded', 'FontColor', [0.4 0.4 0.4]);
-    
-    mSetPanel = uipanel(mLeftGrid, 'Title', 'Merge Settings');
-    mSetGrid = uigridlayout(mSetPanel, [6, 2]);
+
+    mSetGrid = createPanelGrid(mLeftGrid, 'Merge Settings', [6, 2]);
     mSetGrid.ColumnWidth = {'1x', 90};
     mSetGrid.RowHeight = {24, 24, 24, 24, 24, 'fit'};
-    mSetGrid.Padding = [10 10 10 10];
-    
+
     uilabel(mSetGrid, 'Text', 'Figures per output:');
     mFigsPerOut = uieditfield(mSetGrid, 'numeric', 'Value', 10, 'Limits', [1 Inf], 'RoundFractionalValues', 'on');
     uilabel(mSetGrid, 'Text', 'Target Width (in):');
@@ -178,28 +139,20 @@ function BatchFigResizer()
     mHEdit = uieditfield(mSetGrid, 'numeric', 'Value', 4.86, 'Limits', [0 Inf]);
     mRmTitleCheck = uicheckbox(mSetGrid, 'Text', 'Remove Titles from subfigures', 'Value', false);
     mRmTitleCheck.Layout.Column = [1 2];
-    
+
     uilabel(mSetGrid, 'Text', 'Output Folder:');
-    mOutDirBtn = uibutton(mSetGrid, 'Text', 'Browse...', 'ButtonPushedFcn', @(~,~) pickOutputFolder());
+    uibutton(mSetGrid, 'Text', 'Browse...', 'ButtonPushedFcn', @(~,~) pickOutputFolder());
     mOutDirLabel = uilabel(mSetGrid, 'Text', 'Default: Source folder', 'FontColor', [0.4 0.4 0.4], 'WordWrap', 'on');
     mOutDirLabel.Layout.Column = [1 2];
-    
-    mActionPanel = uipanel(mLeftGrid, 'Title', 'Action');
-    mActGrid = uigridlayout(mActionPanel, [1, 1]);
-    mActGrid.Padding = [10 10 10 10];
-    mMergeBtn = uibutton(mActGrid, 'Text', 'Merge Figures', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) runMerge());
-    
-    mRightPanel = uipanel(mergeGrid, 'Title', 'Selected Files for Merge');
-    mRightGrid = uigridlayout(mRightPanel, [1, 1]);
-    mRightGrid.Padding = [10 10 10 10];
+
+    mActGrid = createPanelGrid(mLeftGrid, 'Action', [1, 1]);
+    uibutton(mActGrid, 'Text', 'Merge Figures', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) runMerge());
+
+    mRightGrid = createPanelGrid(mergeGrid, 'Selected Files for Merge', [1, 1]);
     mListbox = uilistbox(mRightGrid, 'Items', {});
-    
-    regionGrid = uigridlayout(regionTab, [1, 2]);
-    regionGrid.ColumnWidth = {285, '1x'};
-    regionGrid.Padding = [15 15 15 15];
-    regionGrid.ColumnSpacing = 15;
-    regionPanel = uipanel(regionGrid, 'Title', 'Subplot Region Selector');
-    regionControlGrid = uigridlayout(regionPanel, [7, 1]);
+
+    regionGrid = createTabColumns(regionTab, 285);
+    regionControlGrid = createPanelGrid(regionGrid, 'Subplot Region Selector', [7, 1]);
     regionControlGrid.RowHeight = {'fit', 'fit', 40, 34, 34, '1x', 'fit'};
     regionControlGrid.Padding = [14 14 14 14];
     regionControlGrid.RowSpacing = 10;
@@ -210,72 +163,49 @@ function BatchFigResizer()
     regionExportBtn = uibutton(regionControlGrid, 'Text', 'Export Selected Region', 'FontWeight', 'bold', 'Enable', 'off', 'ButtonPushedFcn', @(~,~) exportRegionFigure());
     regionStatusLabel = uilabel(regionControlGrid, 'Text', 'Ready', 'FontColor', [0.35 0.35 0.35], 'WordWrap', 'on', 'VerticalAlignment', 'bottom');
     regionStatusLabel.Layout.Row = 7;
-    regionPreviewPanel = uipanel(regionGrid, 'Title', 'Figure Preview');
-    regionPreviewGrid = uigridlayout(regionPreviewPanel, [1, 1]);
-    regionPreviewGrid.Padding = [10 10 10 10];
-    regionPreviewAx = uiaxes(regionPreviewGrid);
-    regionPreviewAx.XTick = [];
-    regionPreviewAx.YTick = [];
-    regionPreviewAx.Box = 'on';
-    regionPreviewAx.Color = [0.96 0.96 0.96];
-    regionPreviewAx.Toolbar.Visible = 'off';
-    disableDefaultInteractivity(regionPreviewAx);
-    title(regionPreviewAx, 'Load a .fig file to begin');
-    
-    copyGrid = uigridlayout(copyTab, [1, 2]);
-    copyGrid.ColumnWidth = {360, '1x'};
-    copyGrid.Padding = [15 15 15 15];
-    copyGrid.ColumnSpacing = 15;
-    
-    cLeftGrid = uigridlayout(copyGrid, [2, 1]);
-    cLeftGrid.RowHeight = {'fit', 'fit'};
-    cLeftGrid.Padding = [0 0 0 0];
-    cLeftGrid.RowSpacing = 12;
-    
-    cFilePanel = uipanel(cLeftGrid, 'Title', 'Select Source & Destination');
-    cFileGrid = uigridlayout(cFilePanel, [3, 2]);
+    regionPreviewGrid = createPanelGrid(regionGrid, 'Figure Preview', [1, 1]);
+    regionPreviewAx = createPreviewAxes(regionPreviewGrid, 'Load a .fig file to begin');
+
+    [copyGrid, cLeftGrid] = createTabColumns(copyTab, 360, {'fit', 'fit'});
+
+    cFileGrid = createPanelGrid(cLeftGrid, 'Select Source & Destination', [3, 2]);
     cFileGrid.ColumnWidth = {100, '1x'};
     cFileGrid.RowHeight = {30, 30, 30};
-    cFileGrid.Padding = [10 10 10 10];
-    
-    cSrcBtn = uibutton(cFileGrid, 'Text', 'Select Source', 'ButtonPushedFcn', @(~,~) selectCSrc());
+
+    uibutton(cFileGrid, 'Text', 'Select Source', 'ButtonPushedFcn', @(~,~) selectCopyFolder(true));
     cSrcLbl = uilabel(cFileGrid, 'Text', 'None selected', 'WordWrap', 'on');
-    
-    cDestBtn = uibutton(cFileGrid, 'Text', 'Select Dest', 'ButtonPushedFcn', @(~,~) selectCDest());
+
+    uibutton(cFileGrid, 'Text', 'Select Dest', 'ButtonPushedFcn', @(~,~) selectCopyFolder(false));
     cDestLbl = uilabel(cFileGrid, 'Text', 'None selected', 'WordWrap', 'on');
-    
+
     uilabel(cFileGrid, 'Text', 'Plot Type:');
     cTypeDrop = uidropdown(cFileGrid, 'Items', {'All', 'Line Plot', 'Scatter Plot', 'Bar Plot', 'Surface Plot', 'Bode Plot', 'Root Locus Plot'});
-    
-    cActPanel = uipanel(cLeftGrid, 'Title', 'Action');
-    cActGrid = uigridlayout(cActPanel, [1, 1]);
-    cActGrid.Padding = [10 10 10 10];
-    cCopyBtn = uibutton(cActGrid, 'Text', 'Copy Files', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) runCopy());
-    
-    cRightPanel = uipanel(copyGrid, 'Title', 'Status Log');
-    cRightGrid = uigridlayout(cRightPanel, [1, 1]);
-    cRightGrid.Padding = [10 10 10 10];
+
+    cActGrid = createPanelGrid(cLeftGrid, 'Action', [1, 1]);
+    uibutton(cActGrid, 'Text', 'Copy Files', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) runCopy());
+
+    cRightGrid = createPanelGrid(copyGrid, 'Status Log', [1, 1]);
     cStatusLog = uilistbox(cRightGrid, 'Items', {'Ready to copy...'});
-    
+
     uUpdateGrid = uigridlayout(updateTab, [4, 1]);
     uUpdateGrid.RowHeight = {40, 40, 40, '1x'};
     uUpdateGrid.Padding = [20 20 20 20];
     uUpdateGrid.RowSpacing = 15;
-    
+
     uilabel(uUpdateGrid, 'Text', sprintf('Current Version: %s', appVersion), 'FontSize', 16, 'FontWeight', 'bold');
-    
+
     checkUpdateBtn = uibutton(uUpdateGrid, 'Text', 'Check for Updates', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) manualCheckForUpdates());
     checkUpdateBtn.Layout.Row = 2;
     checkUpdateBtn.Layout.Column = 1;
-    
+
     updateStatusLbl = uilabel(uUpdateGrid, 'Text', 'Ready to check for updates.', 'WordWrap', 'on', 'FontSize', 14);
     updateStatusLbl.Layout.Row = 3;
     updateStatusLbl.Layout.Column = 1;
-    
+
     downloadUpdateBtn = uibutton(uUpdateGrid, 'Text', 'Download Update', 'Enable', 'off', 'FontWeight', 'bold', 'ButtonPushedFcn', @(~,~) openGitHubRelease());
     downloadUpdateBtn.Layout.Row = 4;
     downloadUpdateBtn.Layout.Column = 1;
-    
+
     regionSourceFig = [];
     regionSourcePath = '';
     regionSourceAxes = [];
@@ -284,17 +214,16 @@ function BatchFigResizer()
     regionAxesXScales = {};
     regionAxesXDirections = {};
     regionPreviewImage = [];
-    regionPreviewImageHandle = [];
     regionSelectionRects = [];
     regionSelectedAxesIndex = [];
     regionDragStartX = [];
     regionDragMode = '';
     regionDragInitialLimits = [];
     regionSelectedXLimits = [];
-    
+
     cSrcPath = '';
     cDestPath = '';
-    
+
     fig.CloseRequestFcn = @(~,~) closeApplication();
     presetDropdown.ValueChangedFcn = @(~,~) applyPreset();
     inputs = [widthEdit, heightEdit, colsEdit, rowsEdit];
@@ -303,15 +232,11 @@ function BatchFigResizer()
     end
     applyPreset();
     checkForUpdates();
-    
+
     function checkForUpdates()
         try
-            opts = weboptions('Timeout', 3);
-            rawURL = 'https://raw.githubusercontent.com/Alexr360/Batch-Fig-Resizer-MATLAB-Script/main/BatchFigResizer.m';
-            remoteCode = webread(rawURL, opts);
-            tokens = regexp(remoteCode, 'appVersion\s*=\s*''([^'']+)''', 'tokens', 'once');
-            if ~isempty(tokens)
-                remoteVer = tokens{1};
+            remoteVer = fetchRemoteVersion();
+            if ~isempty(remoteVer)
                 if isNewerVersion(appVersion, remoteVer)
                     ignored = '';
                     if ispref('BatchFigResizer', 'IgnoredVersion')
@@ -333,31 +258,27 @@ function BatchFigResizer()
     end
 
     function manualCheckForUpdates()
-        updateStatusLbl.Text = 'Checking GitHub for updates...';
-        updateStatusLbl.FontColor = [0 0 0];
+        setStatusLabel(updateStatusLbl, 'Checking GitHub for updates...', [0 0 0]);
         downloadUpdateBtn.Enable = 'off';
         drawnow;
         try
-            opts = weboptions('Timeout', 5);
-            rawURL = 'https://raw.githubusercontent.com/Alexr360/Batch-Fig-Resizer-MATLAB-Script/main/BatchFigResizer.m';
-            remoteCode = webread(rawURL, opts);
-            tokens = regexp(remoteCode, 'appVersion\s*=\s*''([^'']+)''', 'tokens', 'once');
-            if ~isempty(tokens)
-                remoteVer = tokens{1};
+            remoteVer = fetchRemoteVersion();
+            if ~isempty(remoteVer)
                 if isNewerVersion(appVersion, remoteVer)
-                    updateStatusLbl.Text = sprintf('A new version is available: %s', remoteVer);
-                    updateStatusLbl.FontColor = [0 0.5 0];
+                    setStatusLabel(updateStatusLbl, sprintf('A new version is available: %s', remoteVer), [0 0.5 0]);
                     downloadUpdateBtn.Enable = 'on';
                 else
-                    updateStatusLbl.Text = 'You are already running the latest version.';
-                    updateStatusLbl.FontColor = [0 0.5 0];
+                    setStatusLabel(updateStatusLbl, 'You are already running the latest version.', [0 0.5 0]);
                 end
             else
-                updateStatusLbl.Text = 'Could not parse version information from GitHub.';
-                updateStatusLbl.FontColor = [0.75 0.1 0.1];
+                setStatusLabel(updateStatusLbl, 'Could not parse version information from GitHub.', [0.75 0.1 0.1]);
             end
-        catch
-            updateStatusLbl.Text = 'Failed to connect to GitHub. Please check your internet connection.';
+        catch ME
+            if contains(ME.message, '404')
+                updateStatusLbl.Text = 'Error 404: File not found. Make sure the GitHub repo is public and uses the "main" branch.';
+            else
+                updateStatusLbl.Text = sprintf('Connection failed: %s', ME.message);
+            end
             updateStatusLbl.FontColor = [0.75 0.1 0.1];
         end
     end
@@ -385,36 +306,16 @@ function BatchFigResizer()
     function applyPreset()
         switch presetDropdown.Value
             case 'Ryu Presentation Full'
-                widthEdit.Value = 10.0;
-                heightEdit.Value = 4.86;
-                colsEdit.Value = 2;
-                rowsEdit.Value = 1;
-                fontSizeEdit.Value = 12;
-                dpiEdit.Value = 500;
+                setPresetValues(10.0, 4.86, 2, 12, 500);
                 presetDescLabel.Text = 'Full Ryu presentation dimensions split across 2 columns.';
             case 'Ryu Presentation Short'
-                widthEdit.Value = 10.0;
-                heightEdit.Value = 4.42;
-                colsEdit.Value = 2;
-                rowsEdit.Value = 1;
-                fontSizeEdit.Value = 12;
-                dpiEdit.Value = 500;
+                setPresetValues(10.0, 4.42, 2, 12, 500);
                 presetDescLabel.Text = 'Short Ryu presentation dimensions split across 2 columns.';
             case 'Presentation'
-                widthEdit.Value = 9.7;
-                heightEdit.Value = 4.85;
-                colsEdit.Value = 2;
-                rowsEdit.Value = 1;
-                fontSizeEdit.Value = 12;
-                dpiEdit.Value = 500;
+                setPresetValues(9.7, 4.85, 2, 12, 500);
                 presetDescLabel.Text = 'Standard slide body dimensions split across 2 columns.';
             case 'Document'
-                widthEdit.Value = 6.5;
-                heightEdit.Value = 3.0;
-                colsEdit.Value = 1;
-                rowsEdit.Value = 1;
-                fontSizeEdit.Value = 10;
-                dpiEdit.Value = 600;
+                setPresetValues(6.5, 3.0, 1, 10, 600);
                 presetDescLabel.Text = 'Standard single-column report or publication width.';
             case 'Custom'
                 presetDescLabel.Text = 'User-defined layout parameters.';
@@ -422,17 +323,29 @@ function BatchFigResizer()
         updateVisualizer();
     end
 
+    function setPresetValues(width, height, columns, fontSize, dpi)
+        widthEdit.Value = width;
+        heightEdit.Value = height;
+        colsEdit.Value = columns;
+        rowsEdit.Value = 1;
+        fontSizeEdit.Value = fontSize;
+        dpiEdit.Value = dpi;
+    end
+
     function handleManualChange()
         presetDropdown.Value = 'Custom';
-        presetDescLabel.Text = 'User-defined layout parameters.';
-        updateVisualizer();
+        applyPreset();
+    end
+
+    function [width, height, columns, rows] = readLayoutDimensions()
+        width = widthEdit.Value;
+        height = heightEdit.Value;
+        columns = round(colsEdit.Value);
+        rows = round(rowsEdit.Value);
     end
 
     function updateVisualizer()
-        w = widthEdit.Value;
-        h = heightEdit.Value;
-        c = round(colsEdit.Value);
-        r = round(rowsEdit.Value);
+        [w, h, c, r] = readLayoutDimensions();
         cla(ax);
         ax.YDir = 'normal';
         ax.XTickMode = 'auto';
@@ -462,47 +375,43 @@ function BatchFigResizer()
     end
 
     function selectFiles(appendMode)
+        [files, selected] = selectFigureFiles(files, appendMode, fileLabel);
+        if selected
+            buildBatchPreviews();
+        end
+    end
+
+    function selectMergeFiles(appendMode)
+        [mergeFilesList, selected] = selectFigureFiles(mergeFilesList, appendMode, mFileLabel);
+        if selected
+            mListbox.Items = mergeFilesList;
+        end
+    end
+
+    function [selectedFiles, selected] = selectFigureFiles(existingFiles, appendMode, statusLabel)
         [fileNames, pathName] = uigetfile('*.fig', 'Select MATLAB Figures', 'MultiSelect', 'on');
         figure(fig);
-        if isequal(fileNames, 0)
+        selectedFiles = existingFiles;
+        selected = ~isequal(fileNames, 0);
+        if ~selected
             return;
         end
         if ischar(fileNames)
             fileNames = {fileNames};
         end
-        newFiles = fullfile(pathName, fileNames);
+        newFiles = reshape(fullfile(pathName, fileNames), 1, []);
         if appendMode
-            files = unique([files, reshape(newFiles, 1, [])], 'stable');
-        else
-            files = unique(reshape(newFiles, 1, []), 'stable');
+            newFiles = [existingFiles, newFiles];
         end
-        fileLabel.Text = sprintf('%d figure(s) loaded', length(files));
-        fileLabel.FontColor = [0 0.5 0];
-        buildBatchPreviews();
-    end
-
-    function selectMergeFiles(appendMode)
-        [fNames, pName] = uigetfile('*.fig', 'Select MATLAB Figures', 'MultiSelect', 'on');
-        figure(fig);
-        if isequal(fNames, 0), return; end
-        if ischar(fNames), fNames = {fNames}; end
-        newFiles = fullfile(pName, fNames);
-        if appendMode
-            mergeFilesList = unique([mergeFilesList, reshape(newFiles, 1, [])], 'stable');
-        else
-            mergeFilesList = unique(reshape(newFiles, 1, []), 'stable');
-        end
-        mFileLabel.Text = sprintf('%d figure(s) loaded', length(mergeFilesList));
-        mFileLabel.FontColor = [0 0.5 0];
-        mListbox.Items = mergeFilesList;
+        selectedFiles = unique(newFiles, 'stable');
+        setStatusLabel(statusLabel, sprintf('%d figure(s) loaded', numel(selectedFiles)), [0 0.5 0]);
     end
 
     function pickOutputFolder()
         sel = uigetdir('', 'Select Output Folder');
         if ischar(sel)
             mergeOutDir = sel;
-            mOutDirLabel.Text = sel;
-            mOutDirLabel.FontColor = [0 0.5 0];
+            setStatusLabel(mOutDirLabel, sel, [0 0.5 0]);
         end
         figure(fig);
     end
@@ -539,23 +448,19 @@ function BatchFigResizer()
                 tileIdx = 1;
                 for i = 1:length(currentBatch)
                     tmpF = openfig(currentBatch{i}, 'invisible');
-                    axs = findall(tmpF, 'type', 'axes');
-                    axs = axs(~arrayfun(@(a) isa(a, 'matlab.graphics.illustration.Legend') || isa(a, 'matlab.graphics.illustration.ColorBar') || strcmpi(get(a, 'Tag'), 'wraxes'), axs));
-                    axs = flipud(axs); 
+                    axs = findPlotAxes(tmpF);
+                    axs = flipud(axs);
                     for aIdx = 1:length(axs)
                         axs(aIdx).Parent = tl;
-                        axs(aIdx).Layout.Tile = tileIdx; 
-                        tileIdx = tileIdx + 1; 
+                        axs(aIdx).Layout.Tile = tileIdx;
+                        tileIdx = tileIdx + 1;
                         if rmTitles
-                            try, title(axs(aIdx), ''); catch, end
+                            clearPlotTitles(axs(aIdx));
                         end
                     end
                     close(tmpF);
                 end
-                newFig.PaperUnits = 'inches';
-                newFig.PaperSize = [w h];
-                newFig.PaperPositionMode = 'manual';
-                newFig.PaperPosition = [0 0 w h];
+                setFigurePaperSize(newFig, w, h);
                 outFile = fullfile(outDir, sprintf('Merged_Output_%d.fig', k));
                 saveFigureForReopen(newFig, outFile);
             catch ME
@@ -585,26 +490,15 @@ function BatchFigResizer()
             [~, previewName, ~] = fileparts(files{previewIndex});
             previewDialog.Message = sprintf('Rendering (%d/%d): %s', previewIndex, numel(files), previewName);
             previewFigure = [];
-            previewFile = [tempname, '.png'];
             try
                 previewFigure = openfig(files{previewIndex}, 'invisible');
-                previewFigure.PaperPositionMode = 'auto';
-                drawnow;
-                print(previewFigure, previewFile, '-dpng', '-r120');
-                [previewImage, colorMap] = imread(previewFile);
-                if ~isempty(colorMap)
-                    previewImage = uint8(round(ind2rgb(previewImage, colorMap) * 255));
-                end
-                batchPreviewImages{end+1} = previewImage; 
-                batchPreviewNames{end+1} = previewName; 
+                batchPreviewImages{end+1} = renderFigurePreview(previewFigure, 120);
+                batchPreviewNames{end+1} = previewName;
             catch ME
-                failedPreviews{end+1} = sprintf('%s (%s)', previewName, ME.message); 
+                failedPreviews{end+1} = sprintf('%s (%s)', previewName, ME.message);
             end
             if ~isempty(previewFigure) && isvalid(previewFigure)
                 delete(previewFigure);
-            end
-            if isfile(previewFile)
-                delete(previewFile);
             end
         end
         close(previewDialog);
@@ -660,10 +554,7 @@ function BatchFigResizer()
             uialert(fig, 'Select at least one .fig file first.', 'Missing Files');
             return;
         end
-        w = widthEdit.Value;
-        h = heightEdit.Value;
-        c = round(colsEdit.Value);
-        r = round(rowsEdit.Value);
+        [w, h, c, r] = readLayoutDimensions();
         fSize = fontSizeEdit.Value;
         lWidth = lineWidthEdit.Value;
         dotSize = dotSizeEdit.Value;
@@ -695,26 +586,19 @@ function BatchFigResizer()
             try
                 f = openfig(files{i}, 'invisible');
                 delete(findall(f, 'Type', 'axes', 'Tag', 'BatchFigResizerTitlesLegendAxes'));
-                allAxes = findall(f, 'type', 'axes');
-                allAxes = allAxes(~arrayfun(@(a) isa(a, 'matlab.graphics.illustration.Legend') || isa(a, 'matlab.graphics.illustration.ColorBar') || strcmpi(get(a, 'Tag'), 'wraxes'), allAxes));
-                [titleSourceAxes, titleLegendLabels] = collectSubplotTitles(allAxes);
+                allAxes = findPlotAxes(f);
+                if makeTitlesLegend
+                    [titleSourceAxes, titleLegendLabels] = collectSubplotTitles(allAxes);
+                end
                 if length(allAxes) > 1
                     hasSubplots = true;
                 end
                 if ~keepTitles || makeTitlesLegend
-                    for axIdx = 1:length(allAxes)
-                        try, title(allAxes(axIdx), ''); catch, end
-                    end
+                    clearPlotTitles(allAxes);
                 end
                 if ~keepTitles
-                    tl = findall(f, 'Type', 'tiledlayout');
-                    for tlIdx = 1:length(tl)
-                        try, title(tl(tlIdx), ''); catch, end
-                    end
-                    wrax = findall(f, 'Tag', 'wraxes');
-                    for wIdx = 1:numel(wrax)
-                        try, title(wrax(wIdx), ''); catch, end
-                    end
+                    clearPlotTitles(findall(f, 'Type', 'tiledlayout'));
+                    clearPlotTitles(findall(f, 'Tag', 'wraxes'));
                 end
                 if forceGrid
                     if strcmp(forceGridMode, 'Force Enable')
@@ -723,21 +607,24 @@ function BatchFigResizer()
                         gridState = 'off';
                     end
                     for axIdx = 1:length(allAxes)
-                        try, grid(allAxes(axIdx), gridState); catch, end
+                        try
+                            grid(allAxes(axIdx), gridState);
+                        catch
+                        end
                     end
                 end
-                try, set(allAxes, 'FontSize', fSize); catch, end
-                try, set(findall(f, 'type', 'text'), 'FontSize', fSize); catch, end
-                try, set(findall(f, 'type', 'legend'), 'FontSize', fSize); catch, end
-                try, set(findall(f, 'type', 'colorbar'), 'FontSize', fSize); catch, end
+                trySetGraphicsProperty(allAxes, 'FontSize', fSize);
+                trySetGraphicsProperty(findall(f, 'type', 'text'), 'FontSize', fSize);
+                trySetGraphicsProperty(findall(f, 'type', 'legend'), 'FontSize', fSize);
+                trySetGraphicsProperty(findall(f, 'type', 'colorbar'), 'FontSize', fSize);
                 plotLines = findall(f, 'Type', 'line');
-                try, set(plotLines, 'LineWidth', lWidth); catch, end
-                try, set(plotLines, 'MarkerSize', sqrt(dotSize)); catch, end
+                trySetGraphicsProperty(plotLines, 'LineWidth', lWidth);
+                trySetGraphicsProperty(plotLines, 'MarkerSize', sqrt(dotSize));
                 scatterPlots = findall(f, 'Type', 'scatter');
                 if ~isempty(scatterPlots)
-                    try, set(scatterPlots, 'SizeData', dotSize); catch, end
+                    trySetGraphicsProperty(scatterPlots, 'SizeData', dotSize);
                 end
-                try, set(allAxes, 'LineWidth', max(0.8, lWidth * 0.75)); catch, end
+                trySetGraphicsProperty(allAxes, 'LineWidth', max(0.8, lWidth * 0.75));
                 try
                     f.WindowStyle = 'normal';
                     f.WindowState = 'normal';
@@ -745,10 +632,7 @@ function BatchFigResizer()
                     f.Position = [1, 1, indW, indH];
                 catch
                 end
-                f.PaperUnits = 'inches';
-                f.PaperSize = [indW indH];
-                f.PaperPosition = [0 0 indW indH];
-                f.PaperPositionMode = 'manual';
+                setFigurePaperSize(f, indW, indH);
                 if equalizeSubfigures && length(allAxes) > 1
                     manualAxes = allAxes(arrayfun(@(a) isequal(a.Parent, f), allAxes));
                     if numel(manualAxes) > 1
@@ -803,28 +687,29 @@ function BatchFigResizer()
                 if makeTitlesLegend
                     createTitlesLegend(f, titleSourceAxes, titleLegendLabels, fSize, legendLocation, legendMargin);
                 end
-                drawnow;
-                outFile = fullfile(folder, sprintf('%s_resized%s', name, ext));
-                if strcmp(ext, '.fig')
-                    saveFigureForReopen(f, outFile);
-                else
-                    exported = false;
-                    try
-                        if strcmp(ext, '.pdf') || strcmp(ext, '.eps') || strcmp(ext, '.svg')
-                            exportgraphics(f, outFile, 'ContentType', 'vector', 'Units', 'inches', 'Width', indW, 'Height', indH, 'Padding', 'figure');
-                        else
-                            exportgraphics(f, outFile, 'Resolution', dpiVal, 'Units', 'inches', 'Width', indW, 'Height', indH, 'Padding', 'figure');
+
+                if ~keepTitles && ~makeTitlesLegend
+                    allLegends = findall(f, 'Type', 'legend');
+                    hasTopOutsideLegend = false;
+                    for lgIdx = 1:numel(allLegends)
+                        lg = allLegends(lgIdx);
+                        if isvalid(lg) && strcmpi(get(lg, 'Visible'), 'on')
+                            if isprop(lg, 'Location') && any(strcmp(lg.Location, {'northoutside', 'north'}))
+                                hasTopOutsideLegend = true;
+                                break;
+                            end
                         end
-                        exported = true;
-                    catch
-                        exported = false;
                     end
-                    if ~exported
-                        exportFigureViaPrint(f, outFile, ext, indW, indH, dpiVal);
+                    if ~hasTopOutsideLegend
+                        maximizeAxesFill(f, allAxes);
                     end
                 end
+
+                drawnow;
+                outFile = fullfile(folder, sprintf('%s_resized%s', name, ext));
+                exportFigure(f, outFile, ext, indW, indH, dpiVal);
             catch ME
-                failedFiles{end+1} = sprintf('%s (%s)', name, ME.message); 
+                failedFiles{end+1} = sprintf('%s (%s)', name, ME.message);
             end
             if ~isempty(f) && isvalid(f)
                 close(f);
@@ -843,7 +728,111 @@ function BatchFigResizer()
                 titleText = 'Success';
                 iconType = 'info';
             end
-            uiconfirm(fig, msg, titleText, 'Options', {'Open Folder', 'OK'}, 'DefaultOption', 2, 'CancelOption', 2, 'Icon', iconType, 'CloseFcn', @(h, evt) handleConfirm(evt.SelectedOption, lastExportFolder));
+            uiconfirm(fig, msg, titleText, 'Options', {'Open Folder', 'OK'}, 'DefaultOption', 2, 'CancelOption', 2, 'Icon', iconType, 'CloseFcn', @(~, evt) handleConfirm(evt.SelectedOption, lastExportFolder));
+        end
+    end
+
+    function maximizeAxesFill(targetFigure, plotAxes)
+        if isempty(plotAxes), return; end
+        validAxes = plotAxes(arrayfun(@(a) isvalid(a) && (isequal(a.Parent, targetFigure) || isa(a.Parent, 'matlab.ui.Figure')), plotAxes));
+        if isempty(validAxes), return; end
+
+        set(validAxes, 'Units', 'normalized');
+        for aIdx = 1:numel(validAxes)
+            if isprop(validAxes(aIdx), 'PositionConstraint')
+                validAxes(aIdx).PositionConstraint = 'innerposition';
+            elseif isprop(validAxes(aIdx), 'ActivePositionProperty')
+                validAxes(aIdx).ActivePositionProperty = 'position';
+            end
+        end
+        drawnow;
+
+        edgePad = 0.015;
+        targetLeft = edgePad;
+        targetRight = 1 - edgePad;
+        targetBottom = edgePad;
+        targetTop = 1 - edgePad;
+
+        legends = findall(targetFigure, 'Type', 'legend');
+        for lgIdx = 1:numel(legends)
+            lg = legends(lgIdx);
+            if ~isvalid(lg) || strcmpi(get(lg, 'Visible'), 'off'), continue; end
+            try
+                lgUnits = lg.Units;
+                lg.Units = 'normalized';
+                lgPos = lg.Position;
+                lg.Units = lgUnits;
+                if lgPos(2) + lgPos(4) >= 0.85 && lgPos(4) < 0.5
+                    targetTop = min(targetTop, max(0.2, lgPos(2) - edgePad));
+                elseif lgPos(2) <= 0.15 && lgPos(4) < 0.5
+                    targetBottom = max(targetBottom, min(0.8, lgPos(2) + lgPos(4) + edgePad));
+                elseif lgPos(1) >= 0.80 && lgPos(3) < 0.5
+                    targetRight = min(targetRight, max(0.2, lgPos(1) - edgePad));
+                elseif lgPos(1) <= 0.20 && lgPos(3) < 0.5
+                    targetLeft = max(targetLeft, min(0.8, lgPos(1) + lgPos(3) + edgePad));
+                end
+            catch
+            end
+        end
+
+        nAx = numel(validAxes);
+        tightInsets = zeros(nAx, 4);
+        envBounds = zeros(nAx, 4);
+
+        for k = 1:nAx
+            ax = validAxes(k);
+            pos = ax.Position;
+            try
+                ti = ax.TightInset;
+            catch
+                ti = [0.05 0.05 0.02 0.02];
+            end
+            if isempty(ti) || numel(ti) < 4 || any(~isfinite(ti))
+                ti = [0.05 0.05 0.02 0.02];
+            end
+            tightInsets(k, :) = ti;
+            envBounds(k, :) = [pos(1) - ti(1), pos(2) - ti(2), pos(1) + pos(3) + ti(3), pos(2) + pos(4) + ti(4)];
+        end
+
+        envLeft = min(envBounds(:, 1));
+        envBottom = min(envBounds(:, 2));
+        envRight = max(envBounds(:, 3));
+        envTop = max(envBounds(:, 4));
+
+        envW = envRight - envLeft;
+        envH = envTop - envBottom;
+        targetW = targetRight - targetLeft;
+        targetH = targetTop - targetBottom;
+
+        if envW <= 0 || envH <= 0 || targetW <= 0 || targetH <= 0
+            return;
+        end
+
+        scaleX = targetW / envW;
+        scaleY = targetH / envH;
+
+        for k = 1:nAx
+            ax = validAxes(k);
+            ti = tightInsets(k, :);
+            bLeft = envBounds(k, 1);
+            bBottom = envBounds(k, 2);
+            bRight = envBounds(k, 3);
+            bTop = envBounds(k, 4);
+
+            newEnvLeft = targetLeft + (bLeft - envLeft) * scaleX;
+            newEnvRight = targetLeft + (bRight - envLeft) * scaleX;
+            newEnvBottom = targetBottom + (bBottom - envBottom) * scaleY;
+            newEnvTop = targetBottom + (bTop - envBottom) * scaleY;
+
+            newX = newEnvLeft + ti(1);
+            newY = newEnvBottom + ti(2);
+            newW = max(0.05, newEnvRight - ti(3) - newX);
+            newH = max(0.05, newEnvTop - ti(4) - newY);
+
+            try
+                ax.Position = [newX, newY, newW, newH];
+            catch
+            end
         end
     end
 
@@ -869,20 +858,14 @@ function BatchFigResizer()
             catch
                 rawTitle = '';
             end
-            if iscell(rawTitle)
-                titleText = strjoin(cellfun(@char, rawTitle, 'UniformOutput', false), ' ');
-            elseif isstring(rawTitle)
-                titleText = char(strjoin(rawTitle, ' '));
-            else
-                titleText = char(rawTitle);
-            end
+            titleText = graphicsTextToChar(rawTitle);
             if isempty(strtrim(titleText))
                 continue;
             end
-            titleAxes(end+1, 1) = axesHandles(titleIndex); 
-            titleLabels{end+1, 1} = titleText; 
+            titleAxes(end+1, 1) = axesHandles(titleIndex);
+            titleLabels{end+1, 1} = titleText;
             pixelPosition = getpixelposition(axesHandles(titleIndex), true);
-            titlePositions(end+1, :) = [-(pixelPosition(2) + pixelPosition(4)), pixelPosition(1)]; 
+            titlePositions(end+1, :) = [-(pixelPosition(2) + pixelPosition(4)), pixelPosition(1)];
         end
         if ~isempty(titlePositions)
             [~, visualOrder] = sortrows(titlePositions, [1 2]);
@@ -955,13 +938,9 @@ function BatchFigResizer()
                 end
                 if isprop(child, 'Units') && isprop(child, 'Position')
                     child.Units = 'normalized';
-                    if isprop(child, 'OuterPosition') && ~isa(child, 'matlab.graphics.illustration.Legend')
-                        property = 'OuterPosition';
-                        if isprop(child, 'PositionConstraint')
-                            child.PositionConstraint = 'outerposition';
-                        end
-                    else
-                        property = 'Position';
+                    property = figureContentPositionProperty(child);
+                    if strcmp(property, 'OuterPosition') && isprop(child, 'PositionConstraint')
+                        child.PositionConstraint = 'outerposition';
                     end
                     bounds = child.(property);
                     bounds(2) = plotPosition(2) + bounds(2) * plotPosition(4);
@@ -996,11 +975,7 @@ function BatchFigResizer()
                             continue;
                         end
                         child.Units = 'normalized';
-                        if isprop(child, 'OuterPosition') && ~isa(child, 'matlab.graphics.illustration.Legend')
-                            property = 'OuterPosition';
-                        else
-                            property = 'Position';
-                        end
+                        property = figureContentPositionProperty(child);
                         bounds = child.(property);
                         if strcmp(location, 'southoutside')
                             bounds(2) = bounds(2) + correction;
@@ -1028,16 +1003,13 @@ function BatchFigResizer()
             return;
         end
         regionLoadBtn.Enable = 'off';
-        regionStatusLabel.Text = 'Loading figure preview...';
-        regionStatusLabel.FontColor = [0.15 0.4 0.7];
+        setStatusLabel(regionStatusLabel, 'Loading figure preview...', [0.15 0.4 0.7]);
         drawnow;
-        tempPng = [tempname, '.png'];
         try
             closeRegionSource();
             regionSourcePath = fullfile(pathName, fileName);
             regionSourceFig = openfig(regionSourcePath, 'invisible');
-            regionSourceAxes = findall(regionSourceFig, 'Type', 'axes');
-            regionSourceAxes = regionSourceAxes(~arrayfun(@(a) isa(a, 'matlab.graphics.illustration.Legend') || isa(a, 'matlab.graphics.illustration.ColorBar') || strcmpi(get(a, 'Tag'), 'wraxes'), regionSourceAxes));
+            regionSourceAxes = findPlotAxes(regionSourceFig);
             if isempty(regionSourceAxes)
                 error('The selected figure does not contain any plot axes.');
             end
@@ -1056,22 +1028,15 @@ function BatchFigResizer()
                 regionAxesXScales{axesIndex} = regionSourceAxes(axesIndex).XScale;
                 regionAxesXDirections{axesIndex} = regionSourceAxes(axesIndex).XDir;
             end
-            regionSourceFig.PaperPositionMode = 'auto';
-            drawnow;
-            print(regionSourceFig, tempPng, '-dpng', '-r200');
-            [previewImage, colorMap] = imread(tempPng);
-            if ~isempty(colorMap)
-                previewImage = uint8(round(ind2rgb(previewImage, colorMap) * 255));
-            end
-            regionPreviewImage = previewImage;
+            regionPreviewImage = renderFigurePreview(regionSourceFig, 200);
             clearPreviewSelection();
             cla(regionPreviewAx);
             previewHeight = size(regionPreviewImage, 1);
             previewWidth = size(regionPreviewImage, 2);
-            regionPreviewImageHandle = image(regionPreviewAx, 'CData', regionPreviewImage, 'XData', [1 previewWidth], 'YData', [1 previewHeight]);
+            previewImageHandle = image(regionPreviewAx, 'CData', regionPreviewImage, 'XData', [1 previewWidth], 'YData', [1 previewHeight]);
             hold(regionPreviewAx, 'on');
-            regionPreviewImageHandle.ButtonDownFcn = @(~,~) beginPreviewDrag();
-            regionPreviewImageHandle.PickableParts = 'all';
+            previewImageHandle.ButtonDownFcn = @(~,~) beginPreviewDrag();
+            previewImageHandle.PickableParts = 'all';
             regionPreviewAx.ButtonDownFcn = @(~,~) beginPreviewDrag();
             regionPreviewAx.XLim = [0.5 previewWidth + 0.5];
             regionPreviewAx.YLim = [0.5 previewHeight + 0.5];
@@ -1081,18 +1046,13 @@ function BatchFigResizer()
             regionPreviewAx.YTick = [];
             title(regionPreviewAx, 'Drag horizontally over any subplot');
             regionClearBtn.Enable = 'off';
-            regionStatusLabel.Text = sprintf('Loaded %s', fileName);
-            regionStatusLabel.FontColor = [0 0.5 0];
+            setStatusLabel(regionStatusLabel, sprintf('Loaded %s', fileName), [0 0.5 0]);
         catch ME
             closeRegionSource();
             cla(regionPreviewAx);
             title(regionPreviewAx, 'Load a .fig file to begin');
-            regionStatusLabel.Text = 'Could not load figure.';
-            regionStatusLabel.FontColor = [0.75 0.1 0.1];
+            setStatusLabel(regionStatusLabel, 'Could not load figure.', [0.75 0.1 0.1]);
             uialert(fig, ME.message, 'Figure Load Error');
-        end
-        if isfile(tempPng)
-            delete(tempPng);
         end
         regionLoadBtn.Enable = 'on';
     end
@@ -1104,8 +1064,7 @@ function BatchFigResizer()
         point = regionPreviewAx.CurrentPoint(1, 1:2);
         axesIndex = previewAxesAtPoint(point);
         if isempty(axesIndex)
-            regionStatusLabel.Text = 'Start the drag inside a subplot plotting area.';
-            regionStatusLabel.FontColor = [0.65 0.4 0];
+            setStatusLabel(regionStatusLabel, 'Start the drag inside a subplot plotting area.', [0.65 0.4 0]);
             return;
         end
         if ~isempty(regionSelectedXLimits)
@@ -1121,10 +1080,8 @@ function BatchFigResizer()
                 else
                     regionDragMode = 'right-edge';
                 end
-                fig.WindowButtonMotionFcn = @(~,~) updatePreviewDrag();
-                fig.WindowButtonUpFcn = @(~,~) finishPreviewDrag();
-                regionStatusLabel.Text = 'Drag the selected edge to resize the region.';
-                regionStatusLabel.FontColor = [0.15 0.4 0.7];
+                startPreviewDragCallbacks();
+                setStatusLabel(regionStatusLabel, 'Drag the selected edge to resize the region.', [0.15 0.4 0.7]);
                 return;
             end
         end
@@ -1133,9 +1090,21 @@ function BatchFigResizer()
         regionDragMode = 'new-selection';
         axesRectangle = previewAxesRectangle(axesIndex);
         regionDragStartX = min(max(point(1), axesRectangle(1)), axesRectangle(1) + axesRectangle(3));
+        startPreviewDragCallbacks();
+        updatePreviewDrag();
+    end
+
+    function startPreviewDragCallbacks()
         fig.WindowButtonMotionFcn = @(~,~) updatePreviewDrag();
         fig.WindowButtonUpFcn = @(~,~) finishPreviewDrag();
-        updatePreviewDrag();
+    end
+
+    function resetPreviewDrag()
+        fig.WindowButtonMotionFcn = [];
+        fig.WindowButtonUpFcn = [];
+        regionDragStartX = [];
+        regionDragMode = '';
+        regionDragInitialLimits = [];
     end
 
     function updatePreviewDrag()
@@ -1161,24 +1130,18 @@ function BatchFigResizer()
             end
         end
         drawSharedRegionRectangles();
-        regionStatusLabel.Text = sprintf('Selected x-range: %.5g to %.5g', regionSelectedXLimits(1), regionSelectedXLimits(2));
-        regionStatusLabel.FontColor = [0.15 0.4 0.7];
+        setStatusLabel(regionStatusLabel, sprintf('Selected x-range: %.5g to %.5g', regionSelectedXLimits(1), regionSelectedXLimits(2)), [0.15 0.4 0.7]);
     end
 
     function finishPreviewDrag()
-        fig.WindowButtonMotionFcn = [];
-        fig.WindowButtonUpFcn = [];
-        regionDragStartX = [];
-        regionDragMode = '';
-        regionDragInitialLimits = [];
+        resetPreviewDrag();
         if isempty(regionSelectedXLimits) || regionSelectedXLimits(2) <= regionSelectedXLimits(1)
             clearPreviewSelection();
             return;
         end
         regionClearBtn.Enable = 'on';
         regionExportBtn.Enable = 'on';
-        regionStatusLabel.Text = sprintf('Selected x-range: %.5g to %.5g. Drag either red edge to adjust.', regionSelectedXLimits(1), regionSelectedXLimits(2));
-        regionStatusLabel.FontColor = [0.15 0.4 0.7];
+        setStatusLabel(regionStatusLabel, sprintf('Selected x-range: %.5g to %.5g. Drag either red edge to adjust.', regionSelectedXLimits(1), regionSelectedXLimits(2)), [0.15 0.4 0.7]);
     end
 
     function axesIndex = previewAxesAtPoint(point)
@@ -1187,7 +1150,7 @@ function BatchFigResizer()
         for index = 1:size(regionAxesPreviewPositions, 1)
             rectanglePosition = previewAxesRectangle(index);
             if point(1) >= rectanglePosition(1) && point(1) <= rectanglePosition(1) + rectanglePosition(3) && point(2) >= rectanglePosition(2) && point(2) <= rectanglePosition(2) + rectanglePosition(4)
-                matches(end+1) = index; 
+                matches(end+1) = index;
             end
         end
         if ~isempty(matches)
@@ -1252,18 +1215,14 @@ function BatchFigResizer()
             end
             selectionRectangle = rectangle(regionPreviewAx, 'Position', [pixelBounds(1), axesRectangle(2), width, axesRectangle(4)], 'EdgeColor', [0.85 0.15 0.1], 'LineWidth', 2, 'LineStyle', '-');
             selectionRectangle.HitTest = 'off';
-            regionSelectionRects = [regionSelectionRects; selectionRectangle]; 
+            regionSelectionRects = [regionSelectionRects; selectionRectangle];
         end
     end
 
     function clearPreviewSelection()
-        fig.WindowButtonMotionFcn = [];
-        fig.WindowButtonUpFcn = [];
+        resetPreviewDrag();
         deleteSelectionRectangles();
         regionSelectedAxesIndex = [];
-        regionDragStartX = [];
-        regionDragMode = '';
-        regionDragInitialLimits = [];
         regionSelectedXLimits = [];
         regionClearBtn.Enable = 'off';
         regionExportBtn.Enable = 'off';
@@ -1308,11 +1267,9 @@ function BatchFigResizer()
             regionSourceFig.Name = [sourceName, ' - selected region'];
             regionSourceFig.NumberTitle = 'off';
             saveFigureForReopen(regionSourceFig, outputPath);
-            regionStatusLabel.Text = sprintf('Saved %s', outputName);
-            regionStatusLabel.FontColor = [0 0.5 0];
+            setStatusLabel(regionStatusLabel, sprintf('Saved %s', outputName), [0 0.5 0]);
         catch ME
-            regionStatusLabel.Text = 'Region export failed.';
-            regionStatusLabel.FontColor = [0.75 0.1 0.1];
+            setStatusLabel(regionStatusLabel, 'Region export failed.', [0.75 0.1 0.1]);
             uialert(fig, ME.message, 'Region Export Error');
         end
     end
@@ -1330,25 +1287,21 @@ function BatchFigResizer()
         regionAxesXScales = {};
         regionAxesXDirections = {};
         regionPreviewImage = [];
-        regionPreviewImageHandle = [];
-    end
-    
-    function selectCSrc()
-        d = uigetdir();
-        if d ~= 0
-            cSrcPath = d;
-            cSrcLbl.Text = d;
-            cStatusLog.Items = [cStatusLog.Items, {['Source set: ' d]}];
-        end
-        figure(fig);
     end
 
-    function selectCDest()
-        d = uigetdir();
-        if d ~= 0
-            cDestPath = d;
-            cDestLbl.Text = d;
-            cStatusLog.Items = [cStatusLog.Items, {['Dest set: ' d]}];
+    function selectCopyFolder(isSource)
+        folder = uigetdir();
+        if ischar(folder)
+            if isSource
+                cSrcPath = folder;
+                cSrcLbl.Text = folder;
+                label = 'Source';
+            else
+                cDestPath = folder;
+                cDestLbl.Text = folder;
+                label = 'Dest';
+            end
+            cStatusLog.Items = [cStatusLog.Items, {sprintf('%s set: %s', label, folder)}];
         end
         figure(fig);
     end
@@ -1374,24 +1327,7 @@ function BatchFigResizer()
             else
                 try
                     hFig = openfig(oldPath, 'invisible');
-                    switch targetType
-                        case 'Line Plot'
-                            objs = findall(hFig, 'Type', 'line');
-                            if ~isempty(objs), shouldCopy = true; end
-                        case 'Scatter Plot'
-                            objs = findall(hFig, 'Type', 'scatter');
-                            if ~isempty(objs), shouldCopy = true; end
-                        case 'Bar Plot'
-                            objs = findall(hFig, 'Type', 'bar');
-                            if ~isempty(objs), shouldCopy = true; end
-                        case 'Surface Plot'
-                            objs = findall(hFig, 'Type', 'surface');
-                            if ~isempty(objs), shouldCopy = true; end
-                        case 'Bode Plot'
-                            shouldCopy = isBodePlotFigure(hFig);
-                        case 'Root Locus Plot'
-                            shouldCopy = isRootLocusPlotFigure(hFig);
-                    end
+                    shouldCopy = figureMatchesPlotType(hFig, targetType);
                     close(hFig);
                 catch
                     if exist('hFig', 'var') && isgraphics(hFig)
@@ -1420,36 +1356,33 @@ function BatchFigResizer()
 end
 
 function exportFigureViaPrint(targetFig, outFile, ext, w, h, dpiVal)
-    targetFig.PaperUnits = 'inches';
-    targetFig.PaperSize = [w h];
-    targetFig.PaperPositionMode = 'manual';
-    targetFig.PaperPosition = [0 0 w h];
+    setFigurePaperSize(targetFig, w, h);
     drawnow;
     switch lower(ext)
         case {'.tif', '.tiff'}
-            print(targetFig, outFile, '-dtiff', sprintf('-r%d', round(dpiVal)));
-        case '.png'
-            print(targetFig, outFile, '-dpng', sprintf('-r%d', round(dpiVal)));
+            device = '-dtiff';
         case {'.jpeg', '.jpg'}
-            print(targetFig, outFile, '-djpeg', sprintf('-r%d', round(dpiVal)));
+            device = '-djpeg';
         case '.pdf'
-            print(targetFig, outFile, '-dpdf', '-painters');
+            device = '-dpdf';
         case '.eps'
-            print(targetFig, outFile, '-depsc', '-painters');
+            device = '-depsc';
         case '.svg'
-            print(targetFig, outFile, '-dsvg', '-painters');
+            device = '-dsvg';
         otherwise
-            print(targetFig, outFile, '-dpng', sprintf('-r%d', round(dpiVal)));
+            device = '-dpng';
+    end
+    if isVectorFormat(ext)
+        print(targetFig, outFile, device, '-painters');
+    else
+        print(targetFig, outFile, device, sprintf('-r%d', round(dpiVal)));
     end
 end
 
 function tf = isBodePlotFigure(hFig)
     tf = false;
     if isempty(hFig) || ~isvalid(hFig), return; end
-    nameTag = [get(hFig, 'Name') ' ' get(hFig, 'Tag')];
-    if ~isempty(regexpi(nameTag, 'bode')), tf = true; return; end
-    ad = getappdata(hFig);
-    if isfield(ad, 'BodePlot') || isfield(ad, 'WaveformPlot')
+    if hasPlotMetadata(hFig, 'bode', {'BodePlot', 'WaveformPlot'})
         tf = true;
         return;
     end
@@ -1459,12 +1392,9 @@ function tf = isBodePlotFigure(hFig)
     for k = 1:numel(axs)
         ax = axs(k);
         try
-            yStr = '';
-            tStr = '';
-            if isprop(ax, 'YLabel') && ~isempty(ax.YLabel), yStr = char(ax.YLabel.String); end
-            if isprop(ax, 'Title') && ~isempty(ax.Title), tStr = char(ax.Title.String); end
-            if ~isempty(regexpi([yStr ' ' tStr], 'magnitude|mag\s*\(db\)')), hasMag = true; end
-            if ~isempty(regexpi([yStr ' ' tStr], 'phase|phase\s*\(deg\)')), hasPhase = true; end
+            labels = axesLabelText(ax, {'YLabel', 'Title'});
+            if ~isempty(regexpi(labels, 'magnitude|mag\s*\(db\)')), hasMag = true; end
+            if ~isempty(regexpi(labels, 'phase|phase\s*\(deg\)')), hasPhase = true; end
         catch
         end
     end
@@ -1476,10 +1406,7 @@ end
 function tf = isRootLocusPlotFigure(hFig)
     tf = false;
     if isempty(hFig) || ~isvalid(hFig), return; end
-    nameTag = [get(hFig, 'Name') ' ' get(hFig, 'Tag')];
-    if ~isempty(regexpi(nameTag, 'rlocus|root\s*locus')), tf = true; return; end
-    ad = getappdata(hFig);
-    if isfield(ad, 'RootLocusPlot') || isfield(ad, 'RLocusPlot')
+    if hasPlotMetadata(hFig, 'rlocus|root\s*locus', {'RootLocusPlot', 'RLocusPlot'})
         tf = true;
         return;
     end
@@ -1487,13 +1414,7 @@ function tf = isRootLocusPlotFigure(hFig)
     for k = 1:numel(axs)
         ax = axs(k);
         try
-            xStr = '';
-            yStr = '';
-            tStr = '';
-            if isprop(ax, 'XLabel') && ~isempty(ax.XLabel), xStr = char(ax.XLabel.String); end
-            if isprop(ax, 'YLabel') && ~isempty(ax.YLabel), yStr = char(ax.YLabel.String); end
-            if isprop(ax, 'Title') && ~isempty(ax.Title), tStr = char(ax.Title.String); end
-            comb = [xStr ' ' yStr ' ' tStr];
+            comb = axesLabelText(ax, {'XLabel', 'YLabel', 'Title'});
             if ~isempty(regexpi(comb, 'root\s*locus|real\s*axis|imaginary\s*axis'))
                 tf = true;
                 return;
@@ -1516,4 +1437,172 @@ function saveFigureForReopen(sourceFigure, outputPath)
     drawnow;
     savefig(sourceFigure, outputPath);
     clear visibilityCleanup;
+end
+
+function [grid, leftGrid] = createTabColumns(parent, leftWidth, leftRowHeights)
+    grid = uigridlayout(parent, [1, 2]);
+    grid.ColumnWidth = {leftWidth, '1x'};
+    grid.Padding = [15 15 15 15];
+    grid.ColumnSpacing = 15;
+    if nargout > 1
+        leftGrid = uigridlayout(grid, [numel(leftRowHeights), 1]);
+        leftGrid.RowHeight = leftRowHeights;
+        leftGrid.Padding = [0 0 0 0];
+        leftGrid.RowSpacing = 12;
+    end
+end
+
+function previewAxes = createPreviewAxes(parent, caption)
+    previewAxes = uiaxes(parent);
+    previewAxes.XTick = [];
+    previewAxes.YTick = [];
+    previewAxes.Box = 'on';
+    previewAxes.Color = [0.96 0.96 0.96];
+    previewAxes.Toolbar.Visible = 'off';
+    disableDefaultInteractivity(previewAxes);
+    title(previewAxes, caption);
+end
+
+function remoteVersion = fetchRemoteVersion()
+    opts = weboptions('Timeout', 5, 'CertificateFilename', '');
+    rawURL = 'https://raw.githubusercontent.com/Alexr360/Batch-Fig-Resizer-MATLAB-Script/main/BatchFigResizer.m';
+    remoteCode = webread(rawURL, opts);
+    tokens = regexp(remoteCode, 'appVersion\s*=\s*''([^'']+)''', 'tokens', 'once');
+    remoteVersion = '';
+    if ~isempty(tokens)
+        remoteVersion = tokens{1};
+    end
+end
+
+function plotAxes = findPlotAxes(targetFigure)
+    plotAxes = findall(targetFigure, 'Type', 'axes');
+    excluded = arrayfun(@(a) isa(a, 'matlab.graphics.illustration.Legend') || ...
+        isa(a, 'matlab.graphics.illustration.ColorBar') || strcmpi(a.Tag, 'wraxes'), plotAxes);
+    plotAxes = plotAxes(~excluded);
+end
+
+function setFigurePaperSize(targetFigure, width, height)
+    targetFigure.PaperUnits = 'inches';
+    targetFigure.PaperSize = [width height];
+    targetFigure.PaperPositionMode = 'manual';
+    targetFigure.PaperPosition = [0 0 width height];
+end
+
+function clearPlotTitles(targets)
+    for index = 1:numel(targets)
+        try
+            title(targets(index), '');
+        catch
+        end
+    end
+end
+
+function trySetGraphicsProperty(targets, property, value)
+    try
+        set(targets, property, value);
+    catch
+    end
+end
+
+function previewImage = renderFigurePreview(targetFigure, resolution)
+    previewFile = [tempname, '.png'];
+    fileCleanup = onCleanup(@() deleteFileIfPresent(previewFile));
+    targetFigure.PaperPositionMode = 'auto';
+    drawnow;
+    print(targetFigure, previewFile, '-dpng', sprintf('-r%d', resolution));
+    [previewImage, colorMap] = imread(previewFile);
+    if ~isempty(colorMap)
+        previewImage = uint8(round(ind2rgb(previewImage, colorMap) * 255));
+    end
+end
+
+function deleteFileIfPresent(path)
+    if isfile(path)
+        delete(path);
+    end
+end
+
+function exportFigure(targetFigure, outputPath, extension, width, height, resolution)
+    if strcmp(extension, '.fig')
+        saveFigureForReopen(targetFigure, outputPath);
+        return;
+    end
+    try
+        if isVectorFormat(extension)
+            exportgraphics(targetFigure, outputPath, 'ContentType', 'vector', ...
+                'Units', 'inches', 'Width', width, 'Height', height, 'Padding', 'figure');
+        else
+            exportgraphics(targetFigure, outputPath, 'Resolution', resolution, ...
+                'Units', 'inches', 'Width', width, 'Height', height, 'Padding', 'figure');
+        end
+    catch
+        exportFigureViaPrint(targetFigure, outputPath, extension, width, height, resolution);
+    end
+end
+
+function tf = isVectorFormat(extension)
+    tf = any(strcmpi(extension, {'.pdf', '.eps', '.svg'}));
+end
+
+function property = figureContentPositionProperty(child)
+    if isprop(child, 'OuterPosition') && ~isa(child, 'matlab.graphics.illustration.Legend')
+        property = 'OuterPosition';
+    else
+        property = 'Position';
+    end
+end
+
+function tf = figureMatchesPlotType(targetFigure, plotType)
+    switch plotType
+        case {'Line Plot', 'Scatter Plot', 'Bar Plot', 'Surface Plot'}
+            objectTypes = {'line', 'scatter', 'bar', 'surface'};
+            plotTypes = {'Line Plot', 'Scatter Plot', 'Bar Plot', 'Surface Plot'};
+            objectType = objectTypes{strcmp(plotType, plotTypes)};
+            tf = ~isempty(findall(targetFigure, 'Type', objectType));
+        case 'Bode Plot'
+            tf = isBodePlotFigure(targetFigure);
+        case 'Root Locus Plot'
+            tf = isRootLocusPlotFigure(targetFigure);
+        otherwise
+            tf = false;
+    end
+end
+
+function tf = hasPlotMetadata(targetFigure, namePattern, appDataFields)
+    nameTag = [get(targetFigure, 'Name') ' ' get(targetFigure, 'Tag')];
+    tf = ~isempty(regexpi(nameTag, namePattern, 'once')) || ...
+        any(isfield(getappdata(targetFigure), appDataFields));
+end
+
+function text = axesLabelText(targetAxes, properties)
+    labels = cell(1, numel(properties));
+    for index = 1:numel(properties)
+        property = properties{index};
+        labels{index} = '';
+        if isprop(targetAxes, property) && ~isempty(targetAxes.(property))
+            labels{index} = graphicsTextToChar(targetAxes.(property).String);
+        end
+    end
+    text = strjoin(labels, ' ');
+end
+
+function text = graphicsTextToChar(rawText)
+    if iscell(rawText)
+        text = strjoin(cellfun(@char, rawText, 'UniformOutput', false), ' ');
+    elseif isstring(rawText)
+        text = char(strjoin(rawText, ' '));
+    else
+        text = char(rawText);
+    end
+end
+
+function grid = createPanelGrid(parent, caption, gridSize)
+    panel = uipanel(parent, 'Title', caption);
+    grid = uigridlayout(panel, gridSize);
+    grid.Padding = [10 10 10 10];
+end
+
+function setStatusLabel(label, message, color)
+    label.Text = message;
+    label.FontColor = color;
 end

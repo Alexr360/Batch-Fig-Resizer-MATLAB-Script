@@ -45,10 +45,9 @@ A MATLAB GUI application designed to streamline the post-processing, batch resiz
    git clone [https://github.com/your-username/BatchFigResizer.git](https://github.com/your-username/BatchFigResizer.git)
    ```
 2. Open MATLAB and navigate to the downloaded directory.
-3. Run the script in the MATLAB Command Window:
-  ```matlab
-  BatchFigResizer
-  ```
+3. Run the script in the MATLAB Command Window: `BatchFigResizer`
+
+
 ---
 
 ## Usage Guide
@@ -124,5 +123,3 @@ A MATLAB GUI application designed to streamline the post-processing, batch resiz
 ## License
 
 Distributed under the MIT License. See `LICENSE` for details.
-
-```

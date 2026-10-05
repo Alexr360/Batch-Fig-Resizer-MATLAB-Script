@@ -1,5 +1,5 @@
 function BatchFigResizer()
-    appVersion = '1.0.1';
+    appVersion = '1.0.2';
     fig = uifigure('Name', ['Figure Layout Resizer v' appVersion], 'Position', [100 100 920 680]);
     rootGrid = uigridlayout(fig, [1, 1]);
     rootGrid.Padding = [0 0 0 0];
@@ -700,7 +700,7 @@ function BatchFigResizer()
                             end
                         end
                     end
-                    if ~hasTopOutsideLegend
+                    if ~hasTopOutsideLegend && ~isRootLocusPlotFigure(f)
                         maximizeAxesFill(f, allAxes);
                     end
                 end
